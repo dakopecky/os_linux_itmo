@@ -1,0 +1,71 @@
+#1
+sudo yum group install "Development Tools"
+
+#2
+mkdir "$HOME/bastet"
+# moving bastet.tgz to virtualbox via scp
+tar zxf "$HOME/bastet/bastet.tgz"
+sudo yum install boost boost-thread boost-devel
+sudo yum install ncurses-devel
+make -C "$HOME/bastet/bastet-0.43/Makefile"
+"$HOME/bastet/bastet-0.43/bastet"
+
+# adding install to Makefile
+#install:
+#        install $(PROGNAME) /usr/bin -m 771
+echo -e "install:\n\tinstall $(PROGNAME) /usr/bin -m 771" >> "$HOME/bastet/bastet-0.43/Makefile"
+
+sudo make install -C "$HOME/bastet/bastet-0.43/Makefile"
+
+#3
+yum list installed > "$HOME/task3.log"
+
+#4
+yum deplist gcc > "$HOME/task4_1.log"
+rpm -q --whatrequires libgcc > "$HOME/task4_2.log"
+
+#5
+sudo yum install createrepo
+sudo mkdir "/root/localrepo"
+# moving checkinstall-1.6.2-3.el6.1.x86_64.rpm to /root/localrepo via scp
+sudo createrepo "/root/localrepo"
+# creating a localrepo.repo file with information about the new local repo
+# [localrepo]
+# name=localrepo
+# baseurl=file:///root/localrepo/
+# enabled=1
+# gpgcheck=0
+echo -e "[localrepo]\nname=localrepo\nbaseurl=file:///root/localrepo/\nenabled=1\ngpgcheck=0" | sudo tee "/etc/yum.repos.d/localrepo.repo" &>/dev/null
+
+#6
+yum repolist > "$HOME/task6.log"
+
+#7
+for file in "/etc/yum.repos.d/"*; do
+	sudo mv "$file" "$(echo $file | sed s/\.repo$/.disable/)"
+done
+
+sudo mv "/etc/yum.repos.d/localrepo.disable" "/etc/yum.repos.d/localrepo.repo"
+sudo yum available
+sudo yum install checkinstall.x86_64
+
+for file in "/etc/yum.repos.d/"*; do 
+        sudo mv "$file" "$(echo $file | sed s/\.disable$/.repo/)"
+done
+
+#8
+# installing alien
+cd "$HOME"; alien --to-rpm "fortunes-ru_1.52-2_all.deb"
+sudo yum localinstall "fortunes-ru-1.52-3.noarch.rpm"
+
+#9
+dnf download nano
+
+dnf install https://extras.getpagespeed.com/release-el8-latest.rpm
+dnf install rpmrebuild
+
+rpmrebuild -nep nano-2.9.8-1.el8.x86_64.rpm
+# adding "mv /usr/bin/nano /usr/bin/newnano 2> /dev/null" to %post and changing name
+sudo yum localinstall "$HOME/rpmbuild/RPMS/x86_64/newnano-2.9.8-1.el8.x86_64.rpm"
+newnano
+
