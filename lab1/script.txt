@@ -1,0 +1,97 @@
+#!/bin/bash
+
+listPath="$HOME/test/list"
+searchDir="/etc"
+
+#1
+mkdir "$HOME/test"
+
+#2-3
+subDirList=$(sudo find "$searchDir" -type d | egrep -v "^${searchDir}$" | sed -e s:"^$searchDir/":'': -e s:'$':'/':)
+subDirAmount=$(echo "$subDirList" | wc -l)
+
+fileList=$(sudo find "$searchDir" -type f | sed s:"^$searchDir/":'':)
+hiddenFileAmount=$(echo "$fileList" | egrep '(^|/)\.[^/]+$' | wc -l)
+
+echo -e "$subDirList\n$fileList" | sort -u > "$listPath"
+echo "$subDirAmount $hiddenFileAmount" >> "$listPath"
+
+#4-6
+mkdir "$HOME/test/links"
+ln "$listPath" "$HOME/test/links/list_hlink"
+ln -s "$listPath" "$HOME/test/links/list_slink"
+
+#7
+echo "#7"
+echo "Hard link's amount of list_hlink: $(stat -c '%h' "$HOME/test/links/list_hlink")"
+echo "Hard link's amount of list: $(stat -c '%h' "$HOME/test/list")"
+echo "Hard link's amount of list_slink: $(stat -c '%h' "$HOME/test/links/list_slink")"
+
+#8 /links?/
+echo "$(cat "$listPath" | wc -l)" >> "$HOME/test/links/list_hlink"
+
+#9
+echo "#9"
+if diff "$HOME/test/links/list_hlink" "$HOME/test/links/list_slink" &> /dev/null ; then
+	echo "Is list_hlink eq list_slink? YES";
+else
+	echo "Is list_hlink eq list_slink? NO";
+fi
+
+#10-11
+mv "$HOME/test/list" "$HOME/test/list1"
+echo "#11"
+if diff "$HOME/test/links/list_hlink" "$HOME/test/links/list_slink" &> /dev/null ; then
+        echo "Is list_hlink eq list_slink? YES";
+else
+        echo "Is list_hlink eq list_slink? NO";
+fi
+
+#12 /list_link?/
+ln "$HOME/test/links/list_slink" "$HOME/list1"
+
+#13
+sudo find "$searchDir" -type f | egrep -v "^$searchDir$" | egrep '(^|/)[^/]+\.conf$' | sed s:"^$searchDir/":'': > "$HOME/list_conf"
+
+#14
+sudo find "$searchDir" -type d | egrep -v "^$searchDir$" | egrep '(^|/)[^/]+\.d$' | sed s:"^$searchDir/":'': > "$HOME/list_d"
+
+#15
+cat "$HOME/list_conf" "$HOME/list_d" > "$HOME/list_conf_d"
+
+#16-18
+mkdir "$HOME/test/.sub"
+cp "$HOME/list_conf_d" "$HOME/test/.sub"
+cp -b "$HOME/list_conf_d" "$HOME/test/.sub"
+
+#19
+echo "#19"
+find "$HOME/test" | egrep -v "^$HOME/test$" | sed s:"^$HOME/test/":'':
+
+#20-25
+man man > "$HOME/man.txt"
+split -b1K "$HOME/man.txt" "$HOME/man_part."
+mkdir "$HOME/man.dir"
+mv "$HOME/man_part."* "$HOME/man.dir"
+cat "$HOME/man.dir/man_part."* > "$HOME/man.dir/man.txt"
+
+echo "#25"
+if diff "$HOME/man.txt" "$HOME/man.dir/man.txt" &> /dev/null ; then
+        echo "$HOME/man.txt eq $HOME/man.dir/man.txt? YES";
+else
+	echo "$HOME/man.txt eq $HOME/man.dir/man.txt? NO";
+fi
+
+#26-30
+sed -i "$HOME/man.txt" -e '1i some\ntext' -e '$aSome MORE\ntext'
+diff -u "$HOME/man.dir/man.txt" "$HOME/man.txt"  > "$HOME/patchfile.patch"
+mv "$HOME/patchfile.patch" "$HOME/man.dir"
+patch "$HOME/man.dir/man.txt" "$HOME/man.dir/patchfile.patch" 
+
+echo "#30"
+if diff "$HOME/man.txt" "$HOME/man.dir/man.txt" &> /dev/null ; then
+        echo "$HOME/man.txt eq $HOME/man.dir/man.txt? YES";
+else
+        echo "$HOME/man.txt eq $HOME/man.dir/man.txt? NO";
+fi
+

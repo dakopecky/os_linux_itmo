@@ -1,0 +1,7 @@
+#!/bin/bash
+
+sudo rm -rf "$HOME"/test{14,15} "$HOME"/work3.log /home/test13/ /home/u{1,2} /var/mail/u{1,2}
+sudo userdel u1
+sudo userdel u2
+sudo groupdel g1
+
